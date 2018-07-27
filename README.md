@@ -15,9 +15,9 @@ If you are implementing a Managed API imported from Design Center on your Studio
 Path: Preferences>Anypoint Studio>API Manager
 Fill the client_id and client_secret fields and click in validate.
 
-Obs: If even after a succesfully deploy of your application to the Runtime Manager your API Manager keep locked/inactive. Go to Runtime Manager>your app settings>Properties and add the below:
+Obs: If even after a succesfully deploy of your application to the Runtime Manager your API Manager keep locked/inactive. Go to Runtime Manager>your app settings>Properties and add the below (without quotes):
 
-anypoint.platform.analytics_base_uri=https://analytics-ingest.anypoint.mulesoft.com/
-anypoint.platform.client_id=<your organization client id>
-anypoint.platform.client_secret=<your organization client secret>
-anypoint.platform.base_uri=https://anypoint.mulesoft.com/
+anypoint.platform.analytics_base_uri="https://analytics-ingest.anypoint.mulesoft.com/"
+anypoint.platform.client_id="<your organization client id>"
+anypoint.platform.client_secret="<your organization client secret>"
+anypoint.platform.base_uri="https://anypoint.mulesoft.com/"
