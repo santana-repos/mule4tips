@@ -3,11 +3,6 @@ Some tips to help in Mule4
 
 # DataWeave2: get current server time
 
-%dw 2.0
-import * from dw::util::Timer
-output application/json
----
-currentMilliseconds()
 
 # DataWeave2: build date time in Json format
 %dw 2.0
