@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1485c743-1cf4-46ed-a05f-19fd99b07eed" basePath="/test" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="dff85d80-afc8-4988-b27b-5143694b209f" basePath="/test" >
+		<http:request-connection host="127.0.0.1" port="8082" />
+	</http:request-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="40d367ef-df87-4532-89e2-6d25e597be25" file="configs.properties" />
+	<sub-flow name="getLoggerSub_Flow" doc:id="50ac59be-67cc-435c-904f-c417342e53be" >
+		<ee:transform doc:name="Transform Message" doc:id="cfb1fd16-16d0-4f02-bb55-a164d93352b7" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var messageID = vars.messageID
+var correlationId = vars.correlationId default messageID
+var processState = vars.processState default ""
+var systemNow = now()
+---
+if ((p('logger.category.startend') as Number) == 0)
+	{
+    		"Log Point": processState,
+	    "Application Flow": vars.flowName default "",
+	    "Version Number": vars.appVersion default "",
+	    "Date Time": (systemNow.year as String) ++ "-" ++ (systemNow.month as String) ++ "-" ++ (systemNow.day as String) ++ "T" ++ (systemNow.hour as String) ++ ":" ++ (systemNow.minutes as String) ++ ":" ++ (systemNow.seconds as String) ++ "." ++ (systemNow.milliseconds as String) ++ "Z",
+	    "CorrelationId": correlationId,
+	    "MessageId": messageID,
+	    	"Business Key": vars.businessKey,
+	    "Payload": payload as String
+	}
+else
+    {
+    		"Log Point": processState,
+	    "Application Flow": vars.flowName default "",
+	    "Version Number": vars.appVersion default "",
+	    "Date Time": (systemNow.year as String) ++ "-" ++ (systemNow.month as String) ++ "-" ++ (systemNow.day as String) ++ "T" ++ (systemNow.hour as String) ++ ":" ++ (systemNow.minutes as String) ++ ":" ++ (systemNow.seconds as String) ++ "." ++ (systemNow.milliseconds as String) ++ "Z",
+	    "CorrelationId": correlationId,
+	    "MessageId": messageID,
+	    "Payload": payload as String
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<ee:transform doc:name="Transform Message" doc:id="32766b88-b627-4a86-b0e6-958f941ab39c" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="8b254535-2b69-42e9-bf9c-912fb638400d" message="#[payload]"/>
+	</sub-flow>
+	<flow name="test01Flow" doc:id="00609f59-56cd-4ae7-990a-54e21a6169fa" >
+		<http:listener doc:name="Listener" doc:id="86f52a28-9082-417e-9b2b-f520ad0b86e5" config-ref="HTTP_Listener_config" path="/call01">
+			<ee:repeatable-file-store-stream />
+		</http:listener>
+		<ee:transform doc:name="Transform Message" doc:id="33323747-f39a-4fa3-ade7-ee08a87cbd18" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="messageID" ><![CDATA[%dw 2.0
+import * from dw::util::Timer
+output application/json
+---
+currentMilliseconds() as Number]]></ee:set-variable>
+				<ee:set-variable variableName="businessKey" ><![CDATA[attributes.uriParams.businessKey default ""]]></ee:set-variable>
+				<ee:set-variable variableName="processState" ><![CDATA["*** Start Processing ***"]]></ee:set-variable>
+				<ee:set-variable variableName="correlationId" ><![CDATA[%dw 2.0
+import * from dw::util::Timer
+output application/json
+---
+currentMilliseconds() as Number]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<scripting:execute engine="groovy" doc:name="Execute" doc:id="e370aae9-3a91-4603-aaaf-d639f3057bb6" >
+			<scripting:code >return '{ &quot;message&quot;: &quot;Hi&quot; }';</scripting:code>
+		</scripting:execute>
+		<flow-ref doc:name="getLoggerSub_Flow" doc:id="44ba772a-8a7f-4c75-b1a6-8790887f0416" name="getLoggerSub_Flow"/>
+		<ee:transform doc:name="Transform Message" doc:id="45b84ed4-8a45-48b4-a6a7-b834fd7f37e8" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"app": "test",
+	"company": "Advanced Disposal"
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables />
+		</ee:transform>
+		<flow-ref doc:name="Copy_of_test02Flow" doc:id="4e50c429-1ebe-4d47-a6eb-65c9a53bf1d9" name="Copy_of_test02Flow"/>
+	</flow>
+	<flow name="Copy_of_test02Flow" doc:id="7a3c0773-6da0-4a36-add1-0e0c0a9e3012" >
+		<ee:transform doc:name="Copy_of_Change Payload" doc:id="8410cc67-bf28-4d46-838e-3a393108e6b9" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	response: "Ok - 200",
+	requester: payload.company default "none"
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+	<sub-flow name="test01Flow1" doc:id="bb88420c-7b37-400b-86d1-340c9fe7b6f2" >
+		<ee:transform doc:name="set vars" doc:id="d242f967-fa07-461e-ad0e-154448c47655" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	correlationId: "",
+	
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="1d00b40c-9448-49eb-9d83-7734a89b3edc" message="#[payload]"/>
+	</sub-flow>	
+</mule>
