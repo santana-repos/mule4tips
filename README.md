@@ -5,4 +5,5 @@ Some tips to help in Mule4
 https://github.com/thiago-devel/mule4tips/blob/master/millis.DW
 
 # DataWeave2: build date time in Json format
+https://github.com/thiago-devel/mule4tips/blob/master/datetime.DW
 
