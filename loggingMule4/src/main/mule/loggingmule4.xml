@@ -70,13 +70,18 @@ import * from dw::util::Timer
 output application/json
 ---
 currentMilliseconds() as Number]]></ee:set-variable>
-				<ee:set-variable variableName="businessKey" ><![CDATA[attributes.uriParams.businessKey default ""]]></ee:set-variable>
+				<ee:set-variable variableName="businessKey" ><![CDATA[attributes.uriParams.businessKey default "none"]]></ee:set-variable>
 				<ee:set-variable variableName="processState" ><![CDATA["*** Start Processing ***"]]></ee:set-variable>
 				<ee:set-variable variableName="correlationId" ><![CDATA[%dw 2.0
 import * from dw::util::Timer
 output application/json
 ---
 currentMilliseconds() as Number]]></ee:set-variable>
+				<ee:set-variable variableName="flowName" ><![CDATA["test01Flow"]]></ee:set-variable>
+				<ee:set-variable variableName="appVersion" ><![CDATA[%dw 2.0
+output application/java
+---
+p('logger.app.version')]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
 		<scripting:execute engine="groovy" doc:name="Execute" doc:id="e370aae9-3a91-4603-aaaf-d639f3057bb6" >
