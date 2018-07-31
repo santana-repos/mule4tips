@@ -17,10 +17,11 @@ http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mul
 	<sub-flow name="getLoggerSub_Flow" doc:id="50ac59be-67cc-435c-904f-c417342e53be" >
 		<ee:transform doc:name="Transform Message" doc:id="cfb1fd16-16d0-4f02-bb55-a164d93352b7" >
 			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="log" ><![CDATA[%dw 2.0
 output application/java
-var messageID = vars.messageID
-var correlationId = vars.correlationId default messageID
+var correlationId = vars.correlationId default vars.messageID
 var processState = vars.processState default ""
 var systemNow = now()
 ---
@@ -31,9 +32,9 @@ if ((p('logger.category.startend') as Number) == 0)
 	    "Version Number": vars.appVersion default "",
 	    "Date Time": (systemNow.year as String) ++ "-" ++ (systemNow.month as String) ++ "-" ++ (systemNow.day as String) ++ "T" ++ (systemNow.hour as String) ++ ":" ++ (systemNow.minutes as String) ++ ":" ++ (systemNow.seconds as String) ++ "." ++ (systemNow.milliseconds as String) ++ "Z",
 	    "CorrelationId": correlationId,
-	    "MessageId": messageID,
+	    "MessageId": vars.messageID,
 	    	"Business Key": vars.businessKey,
-	    "Payload": payload as String
+	    "Payload": payload
 	}
 else
     {
@@ -42,25 +43,30 @@ else
 	    "Version Number": vars.appVersion default "",
 	    "Date Time": (systemNow.year as String) ++ "-" ++ (systemNow.month as String) ++ "-" ++ (systemNow.day as String) ++ "T" ++ (systemNow.hour as String) ++ ":" ++ (systemNow.minutes as String) ++ ":" ++ (systemNow.seconds as String) ++ "." ++ (systemNow.milliseconds as String) ++ "Z",
 	    "CorrelationId": correlationId,
-	    "MessageId": messageID,
-	    "Payload": payload as String
-}]]></ee:set-payload>
-			</ee:message>
+	    "MessageId": vars.messageID,
+	    "Payload": payload
+}]]></ee:set-variable>
+			</ee:variables>
 		</ee:transform>
 		<ee:transform doc:name="Transform Message" doc:id="32766b88-b627-4a86-b0e6-958f941ab39c" >
 			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-payload]]></ee:set-payload>
 			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="toLog" ><![CDATA[%dw 2.0
+output application/java
+---
+vars.log]]></ee:set-variable>
+			</ee:variables>
 		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="8b254535-2b69-42e9-bf9c-912fb638400d" message="#[payload]"/>
+		<logger level="INFO" doc:name="Logger" doc:id="8b254535-2b69-42e9-bf9c-912fb638400d" message="#[vars.toLog]"/>
 	</sub-flow>
 	<flow name="test01Flow" doc:id="00609f59-56cd-4ae7-990a-54e21a6169fa" >
 		<http:listener doc:name="Listener" doc:id="86f52a28-9082-417e-9b2b-f520ad0b86e5" config-ref="HTTP_Listener_config" path="/call01">
 			<ee:repeatable-file-store-stream />
 		</http:listener>
+		<scripting:execute engine="groovy" doc:name="Execute" doc:id="e370aae9-3a91-4603-aaaf-d639f3057bb6">
+			<scripting:code>return '{ &quot;message&quot;: &quot;Hi&quot; }';</scripting:code>
+		</scripting:execute>
 		<ee:transform doc:name="Transform Message" doc:id="33323747-f39a-4fa3-ade7-ee08a87cbd18" >
 			<ee:message >
 			</ee:message>
@@ -69,24 +75,20 @@ payload]]></ee:set-payload>
 import * from dw::util::Timer
 output application/json
 ---
-currentMilliseconds() as Number]]></ee:set-variable>
+uuid()]]></ee:set-variable>
 				<ee:set-variable variableName="businessKey" ><![CDATA[attributes.uriParams.businessKey default "none"]]></ee:set-variable>
 				<ee:set-variable variableName="processState" ><![CDATA["*** Start Processing ***"]]></ee:set-variable>
-				<ee:set-variable variableName="correlationId" ><![CDATA[%dw 2.0
-import * from dw::util::Timer
-output application/json
----
-currentMilliseconds() as Number]]></ee:set-variable>
 				<ee:set-variable variableName="flowName" ><![CDATA["test01Flow"]]></ee:set-variable>
 				<ee:set-variable variableName="appVersion" ><![CDATA[%dw 2.0
 output application/java
 ---
 p('logger.app.version')]]></ee:set-variable>
+				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<scripting:execute engine="groovy" doc:name="Execute" doc:id="e370aae9-3a91-4603-aaaf-d639f3057bb6" >
-			<scripting:code >return '{ &quot;message&quot;: &quot;Hi&quot; }';</scripting:code>
-		</scripting:execute>
 		<flow-ref doc:name="getLoggerSub_Flow" doc:id="44ba772a-8a7f-4c75-b1a6-8790887f0416" name="getLoggerSub_Flow"/>
 		<ee:transform doc:name="Transform Message" doc:id="45b84ed4-8a45-48b4-a6a7-b834fd7f37e8" >
 			<ee:message >
@@ -101,6 +103,8 @@ output application/json
 			<ee:variables />
 		</ee:transform>
 		<flow-ref doc:name="Copy_of_test02Flow" doc:id="4e50c429-1ebe-4d47-a6eb-65c9a53bf1d9" name="Copy_of_test02Flow"/>
+		<set-variable value='""*** Stop Processing ***""' doc:name="Set Variable" doc:id="ad155545-302c-44cc-bea6-a3d87ad77cff" variableName="processState"/>
+		<flow-ref doc:name="getLoggerSub_Flow" doc:id="b8e1795f-3bd4-4e11-945a-50daf6dd77c8" name="getLoggerSub_Flow"/>
 	</flow>
 	<flow name="Copy_of_test02Flow" doc:id="7a3c0773-6da0-4a36-add1-0e0c0a9e3012" >
 		<ee:transform doc:name="Copy_of_Change Payload" doc:id="8410cc67-bf28-4d46-838e-3a393108e6b9" >
