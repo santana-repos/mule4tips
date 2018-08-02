@@ -10,7 +10,7 @@
 	<munit:config name="loggingmule4-test-suite.xml" />
 	<munit:test name="loggingmule4-test-suite-test01FlowTest" description="Test" doc:id="a15ea2fb-edba-4903-aeeb-7711be56c965" >
 		<munit:execution >
-			<flow-ref doc:name="Flow-ref to test01Flow" doc:id="d4ae879f-4966-4992-9c80-ce43f56330fa" name="test01Flow"/>
+			<flow-ref doc:name="loggingFlow" doc:id="d4ae879f-4966-4992-9c80-ce43f56330fa" name="loggingFlow"/>
 		</munit:execution>
 	</munit:test>
 

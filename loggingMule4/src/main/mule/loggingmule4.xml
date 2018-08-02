@@ -6,108 +6,57 @@
 http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
 http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
 http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
-
-	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="1485c743-1cf4-46ed-a05f-19fd99b07eed" basePath="/test" >
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="22b9aa9a-6132-4492-944b-3653fe3e0ca3" basePath="/logs" >
 		<http:listener-connection host="0.0.0.0" port="8081" />
 	</http:listener-config>
-	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="dff85d80-afc8-4988-b27b-5143694b209f" basePath="/test" >
-		<http:request-connection host="127.0.0.1" port="8082" />
-	</http:request-config>
-	<configuration-properties doc:name="Configuration properties" doc:id="40d367ef-df87-4532-89e2-6d25e597be25" file="configs.properties" />
-	<sub-flow name="getLoggerSub_Flow" doc:id="50ac59be-67cc-435c-904f-c417342e53be" >
-		<ee:transform doc:name="Transform Message" doc:id="cfb1fd16-16d0-4f02-bb55-a164d93352b7" >
-			<ee:message >
-			</ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="log" ><![CDATA[%dw 2.0
-output application/java
-var correlationId = vars.correlationId default vars.messageID
-var processState = vars.processState default ""
-var systemNow = now()
----
-if ((p('logger.category.startend') as Number) == 0)
-	{
-    		"Log Point": processState,
-	    "Application Flow": vars.flowName default "",
-	    "Version Number": vars.appVersion default "",
-	    "Date Time": (systemNow.year as String) ++ "-" ++ (systemNow.month as String) ++ "-" ++ (systemNow.day as String) ++ "T" ++ (systemNow.hour as String) ++ ":" ++ (systemNow.minutes as String) ++ ":" ++ (systemNow.seconds as String) ++ "." ++ (systemNow.milliseconds as String) ++ "Z",
-	    "CorrelationId": correlationId,
-	    "MessageId": vars.messageID,
-	    	"Business Key": vars.businessKey,
-	    "Payload": payload
-	}
-else
-    {
-    		"Log Point": processState,
-	    "Application Flow": vars.flowName default "",
-	    "Version Number": vars.appVersion default "",
-	    "Date Time": (systemNow.year as String) ++ "-" ++ (systemNow.month as String) ++ "-" ++ (systemNow.day as String) ++ "T" ++ (systemNow.hour as String) ++ ":" ++ (systemNow.minutes as String) ++ ":" ++ (systemNow.seconds as String) ++ "." ++ (systemNow.milliseconds as String) ++ "Z",
-	    "CorrelationId": correlationId,
-	    "MessageId": vars.messageID,
-	    "Payload": payload
-}]]></ee:set-variable>
-			</ee:variables>
-		</ee:transform>
-		<ee:transform doc:name="Transform Message" doc:id="32766b88-b627-4a86-b0e6-958f941ab39c" >
-			<ee:message >
-			</ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="toLog" ><![CDATA[%dw 2.0
-output application/java
----
-vars.log]]></ee:set-variable>
-			</ee:variables>
-		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="8b254535-2b69-42e9-bf9c-912fb638400d" message="#[vars.toLog]"/>
-	</sub-flow>
-	<flow name="test01Flow" doc:id="00609f59-56cd-4ae7-990a-54e21a6169fa" >
-		<http:listener doc:name="Listener" doc:id="86f52a28-9082-417e-9b2b-f520ad0b86e5" config-ref="HTTP_Listener_config" path="/call01">
+	<configuration-properties doc:name="Configuration properties" doc:id="b910a425-138f-4724-847c-37245704d984" file="configs.properties" />
+	<flow name="loggingFlow" doc:id="00609f59-56cd-4ae7-990a-54e21a6169fa" >
+		<http:listener doc:name="Listener" doc:id="d36327a6-e334-4a9f-a6b3-043a6a3382d5" path="/log" config-ref="HTTP_Listener_config">
 			<ee:repeatable-file-store-stream />
 		</http:listener>
-		<scripting:execute engine="groovy" doc:name="Execute" doc:id="e370aae9-3a91-4603-aaaf-d639f3057bb6">
-			<scripting:code>return '{ &quot;message&quot;: &quot;Hi&quot; }';</scripting:code>
-		</scripting:execute>
-		<ee:transform doc:name="Transform Message" doc:id="33323747-f39a-4fa3-ade7-ee08a87cbd18" >
-			<ee:message >
-			</ee:message>
-			<ee:variables >
-				<ee:set-variable variableName="messageID" ><![CDATA[%dw 2.0
-import * from dw::util::Timer
-output application/json
----
-uuid()]]></ee:set-variable>
-				<ee:set-variable variableName="businessKey" ><![CDATA[attributes.uriParams.businessKey default "none"]]></ee:set-variable>
-				<ee:set-variable variableName="processState" ><![CDATA["*** Start Processing ***"]]></ee:set-variable>
-				<ee:set-variable variableName="flowName" ><![CDATA["test01Flow"]]></ee:set-variable>
-				<ee:set-variable variableName="appVersion" ><![CDATA[%dw 2.0
-output application/java
----
-p('logger.app.version')]]></ee:set-variable>
-				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
-output application/java
----
-payload]]></ee:set-variable>
-			</ee:variables>
-		</ee:transform>
-		<flow-ref doc:name="getLoggerSub_Flow" doc:id="44ba772a-8a7f-4c75-b1a6-8790887f0416" name="getLoggerSub_Flow"/>
-		<ee:transform doc:name="Transform Message" doc:id="45b84ed4-8a45-48b4-a6a7-b834fd7f37e8" >
+		<ee:transform doc:name="Fake inbound Payload" doc:id="c8ab9089-c372-4a29-abc9-5ebb5f23bf2c" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
 {
-	"app": "test",
-	"company": "Advanced Disposal"
+	field1: 0,
+	field2: "field 2",
+	field3: false
 }]]></ee:set-payload>
 			</ee:message>
-			<ee:variables />
 		</ee:transform>
-		<flow-ref doc:name="Copy_of_test02Flow" doc:id="4e50c429-1ebe-4d47-a6eb-65c9a53bf1d9" name="Copy_of_test02Flow"/>
-		<set-variable value='""*** Stop Processing ***""' doc:name="Set Variable" doc:id="ad155545-302c-44cc-bea6-a3d87ad77cff" variableName="processState"/>
-		<flow-ref doc:name="getLoggerSub_Flow" doc:id="b8e1795f-3bd4-4e11-945a-50daf6dd77c8" name="getLoggerSub_Flow"/>
+		<set-variable value="#[uuid()]" doc:name="setting up the messageID" doc:id="a70298ce-0de6-44ed-a8ce-46ed67c10875" variableName="messageID"/>
+		<ee:transform doc:name="Setting up additional vars" doc:id="33323747-f39a-4fa3-ade7-ee08a87cbd18" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="businessKey" ><![CDATA[%dw 2.0
+output application/java
+---
+if ((attributes.headers.businessKey != null) and (attributes.headers.businessKey != ""))
+	attributes.headers.businessKey
+else
+	"none"]]></ee:set-variable>
+				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-variable>
+				<ee:set-variable variableName="correlationID" ><![CDATA[%dw 2.0
+output application/java
+---
+if ((attributes.headers."x-root-correlation-id" != null) and (attributes.headers."x-root-correlation-id" != ""))
+	attributes.headers."x-root-correlation-id"
+else
+	vars.messageID]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Starter LOGGER" doc:id="26b9cb78-497c-4bfe-9936-531866f39fe1" message="#[%dw 2.0 output application/json --- if ((p('logger.category.startend') as Number) == 0)	{    		&quot;Log Point&quot;: &quot;*** Start Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    	&quot;Business Key&quot;: vars.businessKey,	    &quot;Payload&quot;: payload	} else    {    		&quot;Log Point&quot;: &quot;*** Start of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    &quot;Payload&quot;: payload }]" />
+		<flow-ref doc:name="Calling Fake Remote Service" doc:id="7bb93c15-21f1-431b-99c2-6c3a80f51e4b" name="remoteServiceFake"/>
+		<logger level="INFO" doc:name="Stop LOGGER" doc:id="2e33c9c8-8461-4d15-ac6d-12c81a4d4fef" message="#[%dw 2.0 output application/json --- if ((p('logger.category.startend') as Number) == 0)	{    		&quot;Log Point&quot;: &quot;*** Stop of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    	&quot;Business Key&quot;: vars.businessKey,	    &quot;Payload&quot;: payload	} else    {    		&quot;Log Point&quot;: &quot;*** Stop of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    &quot;Payload&quot;: payload }]" />
 	</flow>
-	<flow name="Copy_of_test02Flow" doc:id="7a3c0773-6da0-4a36-add1-0e0c0a9e3012" >
-		<ee:transform doc:name="Copy_of_Change Payload" doc:id="8410cc67-bf28-4d46-838e-3a393108e6b9" >
+	<flow name="remoteServiceFake" doc:id="7a3c0773-6da0-4a36-add1-0e0c0a9e3012" >
+		<ee:transform doc:name="Some remote service Response Payload" doc:id="8410cc67-bf28-4d46-838e-3a393108e6b9" >
 			<ee:message >
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
@@ -118,19 +67,5 @@ output application/json
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-	</flow>
-	<sub-flow name="test01Flow1" doc:id="bb88420c-7b37-400b-86d1-340c9fe7b6f2" >
-		<ee:transform doc:name="set vars" doc:id="d242f967-fa07-461e-ad0e-154448c47655" >
-			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/java
----
-{
-	correlationId: "",
-	
-}]]></ee:set-payload>
-			</ee:message>
-		</ee:transform>
-		<logger level="INFO" doc:name="Logger" doc:id="1d00b40c-9448-49eb-9d83-7734a89b3edc" message="#[payload]"/>
-	</sub-flow>	
+	</flow>	
 </mule>
