@@ -26,34 +26,58 @@ output application/json
 }]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
-		<set-variable value="#[uuid()]" doc:name="setting up the messageID" doc:id="a70298ce-0de6-44ed-a8ce-46ed67c10875" variableName="messageID"/>
-		<ee:transform doc:name="Setting up additional vars" doc:id="33323747-f39a-4fa3-ade7-ee08a87cbd18" >
+		<ee:transform doc:name="Setting UP generated var" doc:id="284b6eaa-70e0-4eb2-937b-ac285ea42526" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+}]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="generated" ><![CDATA[%dw 2.0
+output application/java
+---
+{
+	messageID: uuid() as String,
+	queryParams: attributes.queryParams default "" as String,
+	httpHeaders: attributes.headers default "" as String
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Setting UP additional Vars" doc:id="3abd64de-4a90-41c7-8425-ee089535d207" >
 			<ee:message >
 			</ee:message>
 			<ee:variables >
-				<ee:set-variable variableName="businessKey" ><![CDATA[%dw 2.0
+				<ee:set-variable variableName="businessKEY" ><![CDATA[%dw 2.0
 output application/java
 ---
-if ((attributes.headers.businessKey != null) and (attributes.headers.businessKey != ""))
-	attributes.headers.businessKey
+if ((attributes.headers."x-root-business-key" != null) and (attributes.headers."x-root-business-key" != ""))
+	attributes.headers."x-root-business-key"
 else
-	"none"]]></ee:set-variable>
-				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
-output application/java
----
-payload]]></ee:set-variable>
+	if ((payload != null) and ((sizeOf(payload) as Number) > 0))
+        payload
+    else
+        if (vars.generated.httpHeaders != "")
+            "Header_KEY": (vars.generated.httpHeaders)
+        else
+            "QueryParam_KEY": (vars.generated.queryParams)]]></ee:set-variable>
 				<ee:set-variable variableName="correlationID" ><![CDATA[%dw 2.0
 output application/java
 ---
 if ((attributes.headers."x-root-correlation-id" != null) and (attributes.headers."x-root-correlation-id" != ""))
 	attributes.headers."x-root-correlation-id"
 else
-	vars.messageID]]></ee:set-variable>
+	vars.generated.messageID]]></ee:set-variable>
+				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
+output application/java
+---
+payload]]></ee:set-variable>
 			</ee:variables>
 		</ee:transform>
-		<logger level="INFO" doc:name="Starter LOGGER" doc:id="26b9cb78-497c-4bfe-9936-531866f39fe1" message="#[%dw 2.0 output application/json --- if ((p('logger.category.startend') as Number) == 0)	{    		&quot;Log Point&quot;: &quot;*** Start Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    	&quot;Business Key&quot;: vars.businessKey	} else  if ((p('logger.category.startend') as Number) == 1)   {    		&quot;Log Point&quot;: &quot;*** Start of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    &quot;Payload&quot;: payload } else {}]" />
+		<logger level="INFO" doc:name="Starter LOGGER" doc:id="26b9cb78-497c-4bfe-9936-531866f39fe1" message="#[%dw 2.0 output application/json --- if ((p('logger.category.startend') as Number) == 0)	{    		&quot;Log Point&quot;: &quot;*** Start Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.generated.messageID,     &quot;Server Host&quot;: server.host,	    	&quot;Business Key&quot;: vars.businessKey	} else  if ((p('logger.category.startend') as Number) == 1)   {    		&quot;Log Point&quot;: &quot;*** Start of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.generated.messageID,     &quot;Server Host&quot;: server.host,	    &quot;Payload&quot;: payload } else {}]" />
 		<flow-ref doc:name="Calling Fake Remote Service" doc:id="7bb93c15-21f1-431b-99c2-6c3a80f51e4b" name="remoteServiceFake"/>
-		<logger level="INFO" doc:name="Stop LOGGER" doc:id="2e33c9c8-8461-4d15-ac6d-12c81a4d4fef" message="#[%dw 2.0 output application/json --- if ((p('logger.category.startend') as Number) == 0)	{    		&quot;Log Point&quot;: &quot;*** Stop Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    	&quot;Business Key&quot;: vars.businessKey	} else  if ((p('logger.category.startend') as Number) == 1)   {    		&quot;Log Point&quot;: &quot;*** Stop of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host,	    &quot;Payload&quot;: payload } else {    		&quot;Log Point&quot;: &quot;*** Stop of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.messageID,     &quot;Server Host&quot;: server.host}]" />
+		<logger level="INFO" doc:name="Stop LOGGER" doc:id="2e33c9c8-8461-4d15-ac6d-12c81a4d4fef" message="#[%dw 2.0 output application/json --- if ((p('logger.category.startend') as Number) == 0)	{    		&quot;Log Point&quot;: &quot;*** Stop Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.generated.messageID,     &quot;Server Host&quot;: server.host,	    	&quot;Business Key&quot;: vars.businessKey	} else  if ((p('logger.category.startend') as Number) == 1)   {    		&quot;Log Point&quot;: &quot;*** Stop of Processing ***&quot;,	    &quot;Application Flow&quot;: app.name default &quot;&quot;,	    &quot;Version Number&quot;: p('logger.app.version') default &quot;&quot;,	    &quot;Date Time&quot;: (now().year as String) ++ &quot;-&quot; ++ (now().month as String) ++ &quot;-&quot; ++ (now().day as String) ++ &quot;T&quot; ++ (now().hour as String) ++ &quot;:&quot; ++ (now().minutes as String) ++ &quot;:&quot; ++ (now().seconds as String) ++ &quot;.&quot; ++ (now().milliseconds as String) ++ &quot;Z&quot;,  &quot;correlationId&quot;: vars.correlationID,	    &quot;MessageId&quot;: vars.generated.messageID,     &quot;Server Host&quot;: server.host,	    &quot;Payload&quot;: payload } else {}]" />
 	</flow>
 	<flow name="remoteServiceFake" doc:id="7a3c0773-6da0-4a36-add1-0e0c0a9e3012" >
 		<ee:transform doc:name="Some remote service Response Payload" doc:id="8410cc67-bf28-4d46-838e-3a393108e6b9" >
@@ -61,10 +85,17 @@ else
 				<ee:set-payload ><![CDATA[%dw 2.0
 output application/json
 ---
-{
-	response: "Ok - 200",
-	requester: payload.company default "none"
-}]]></ee:set-payload>
+if ((payload != null) and ((sizeOf(payload) as Number) > 0))
+	{
+		response: "Ok - 200",
+		requester: payload.company default "none"
+	}
+else
+	{
+		response: "Ok - 200",
+		requester: "none"
+	}
+]]></ee:set-payload>
 			</ee:message>
 		</ee:transform>
 	</flow>	
