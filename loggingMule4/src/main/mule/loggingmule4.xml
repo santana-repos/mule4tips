@@ -28,11 +28,6 @@ output application/json
 		</ee:transform>
 		<ee:transform doc:name="Setting UP generated var" doc:id="284b6eaa-70e0-4eb2-937b-ac285ea42526" >
 			<ee:message >
-				<ee:set-payload ><![CDATA[%dw 2.0
-output application/json
----
-{
-}]]></ee:set-payload>
 			</ee:message>
 			<ee:variables >
 				<ee:set-variable variableName="generated" ><![CDATA[%dw 2.0
@@ -40,7 +35,7 @@ output application/java
 ---
 {
 	messageID: uuid() as String,
-	queryParams: attributes.queryParams default "" as String,
+	queryParams: attributes.queryString default "" as String,
 	httpHeaders: attributes.headers default "" as String
 }]]></ee:set-variable>
 			</ee:variables>
